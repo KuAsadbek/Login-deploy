@@ -3,6 +3,7 @@ from aiogram.fsm.state import StatesGroup,State
 class StateUser(StatesGroup):
     who = State()
     un_id = State()
+    yep = State()
     ru = State()
     school = State()
     muc = State()

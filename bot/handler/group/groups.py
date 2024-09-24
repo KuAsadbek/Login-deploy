@@ -17,6 +17,7 @@ db = SQLiteCRUD('./db.sqlite3')
 @group_router.message(CommandStart())
 async def one_cmd(message:Message):
     await message.answer(f'Hi bro you need excel file?',reply_markup=CreateInline('send_excel'))
+    await message.delete()
 
 @group_router.callback_query(F.data=='send_excel')
 async def send(call:CallbackQuery):
