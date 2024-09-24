@@ -3,7 +3,7 @@ from aiogram import Router,F
 from aiogram.filters import CommandStart
 from aiogram.types import Message,CallbackQuery,FSInputFile
 
-from set_app.settings import DESCR,USERMOD,SAVE_DATA
+from set_app.settings import DESCR,USERMOD,SAVE_DATA,TEACHER_MOD,PARENTS_MOD
 
 from ...utils.db.class_db import SQLiteCRUD
 from ...filters.chat_type import chat_type_filter,create_excel_with_data
@@ -37,7 +37,7 @@ async def send(call:CallbackQuery):
         else:
             await call.message.reply("Произошла ошибка при создании файла.")
     else:
-         await call.message.reply("Нет данных.")
+        await call.message.reply("Нет данных.")
 
 @group_router.callback_query(lambda c: c.data and c.data.startswith('Tr_') or c.data.startswith('Fr_'))
 async def check(call:CallbackQuery):
@@ -45,12 +45,14 @@ async def check(call:CallbackQuery):
     user_id = int(index)
     save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
     
-    lg = save_data[0][6]
     user = save_data[0][1]
-    title = save_data[0][2]
-    school = save_data[0][3]
-    city = save_data[0][4]
-    num = save_data[0][5]
+    who = save_data[0][2]
+    title = save_data[0][3]
+    muc = save_data[0][4]
+    school = save_data[0][5]
+    city = save_data[0][6]
+    num = save_data[0][7]
+    lg = save_data[0][8]
     py = True
 
     if lg == 'ru':
@@ -62,29 +64,60 @@ async def check(call:CallbackQuery):
         r = 'Chek tasdiqlandi!!!'
         u = 'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
     
-    for i in db.read(DESCR,where_clause=f'title_id = 1'):
-            text = i[ru]
+    main = db.read(DESCR,where_clause=f'title_id = 1')
+    text = main[0][ru]
 
     if str_text == 'Tr':
-
-        db.insert(
-            USERMOD,
-            telegram_id = user,
-            full_name = title,
-            school = school,
-            city = city,
-            number = num,
-            payment = py,
-            language = lg
-        )
-
-        db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
-
-        await call.message.bot.send_message(
-            chat_id=user_id,
-            text=f'{text}\n\n{r}'
-        )
-
+        if who == 'std':
+            db.insert(
+                USERMOD,
+                telegram_id = user,
+                full_name = title,
+                school = school,
+                city = city,
+                number = num,
+                payment = py,
+                language = lg
+            )
+            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
+            await call.message.bot.send_message(
+                chat_id=user_id,
+                text=f'{text}\n\n{r}'
+            )
+        elif who == 'tch':
+            db.insert(
+                TEACHER_MOD,
+                telegram_id = user,
+                full_name = title,
+                school = school,
+                class_name = muc,
+                city = city,
+                number = num,
+                payment = py,
+                language = lg
+            )
+            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
+            await call.message.bot.send_message(
+                chat_id=user_id,
+                text=f'{text}\n\n{r}'
+            )
+        elif who == 'pr':
+            db.insert(
+                PARENTS_MOD,
+                telegram_id = user,
+                full_name = title,
+                school = school,
+                class_name = muc,
+                city = city,
+                number = num,
+                payment = py,
+                language = lg
+            )
+            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
+            await call.message.bot.send_message(
+                chat_id=user_id,
+                text=f'{text}\n\n{r}'
+            )
     elif str_text == 'Fr':           
 
         db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')

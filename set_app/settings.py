@@ -131,8 +131,10 @@ BOT_TOKEN = '6717297238:AAE1lAwIuPzG41k-bAcZGJSzBK3SujH9COo'
 ADMIN_ID = [7675608621]
 CHANEL_ID = -1002020757864
 
+TEACHER_MOD = 'main_app_teachermod'
+PARENTS_MOD = 'main_app_parentmod'
 DESCR = 'main_app_descriptionmod'
 USERMOD = 'main_app_usermod'
-CAT = 'main_app_categirymod'
+CAT = 'main_app_categorymod'
 BUT = 'main_app_buttonmod'
 SAVE_DATA = 'main_app_save_user_data'

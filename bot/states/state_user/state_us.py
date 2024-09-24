@@ -1,7 +1,10 @@
 from aiogram.fsm.state import StatesGroup,State
 
 class StateUser(StatesGroup):
+    who = State()
+    ru = State()
     school = State()
+    muc = State()
     name = State()
     city = State()
     number = State()
@@ -9,12 +12,3 @@ class StateUser(StatesGroup):
     py1 = State()
     check = State()
     comment = State()
-
-    comment_uz = State()
-    school_uz = State()
-    name_uz = State()
-    city_uz = State()
-    number_uz = State()
-    py_uz = State()
-    py1_uz = State()
-    check_uz = State()
