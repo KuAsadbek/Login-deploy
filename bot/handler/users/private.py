@@ -18,15 +18,7 @@ db = SQLiteCRUD('./db.sqlite3')
 @user_private_router.message(CommandStart())
 async def private_start(message:Message,state:FSMContext):
     user_id = message.from_user.id
-    main = db.read(DESCR,where_clause=f'title_id = {1}')
-    save_data = db.read(
-        SAVE_DATA,
-        where_clause=f'telegram_id = {user_id}'
-    )
-    student = db.read(
-        USERMOD,
-        where_clause=f'telegram_id = {user_id}'
-    )
+    main = db.read(DESCR,where_clause=f'title_id = 1')
     teacher = db.read(
         TEACHER_MOD,
         where_clause=f'telegram_id = {user_id}'
@@ -35,16 +27,47 @@ async def private_start(message:Message,state:FSMContext):
         PARENTS_MOD,
         where_clause=f'telegram_id = {user_id}'
     )
+    save_data = db.read(
+        SAVE_DATA,
+        where_clause=f'telegram_id = {user_id}'
+    )
+    student = db.read(
+        USERMOD,
+        where_clause=f'telegram_id = {user_id}'
+    )
+    
 
-    if main is not None:
-        await message.answer("Ошибка: основная информация отсутствует.")
-        return
+    if teacher is not None:
+        lg = teacher[0][7]
+        if lg == 'ru':
+            n = 2
+        elif lg == 'uz':
+            n = 1
+        text = main[0][n]
+        await state.update_data({'who':'Tch_a','LG':lg,'tch_id':user_id})
+        await message.answer(
+            f'{text}',
+            reply_markup=CreateInline(add_std='add students')
+        )
 
-    if save_data is not None:
+    elif parent is not None:
+        lg = parent[0][7]
+        if lg == 'ru':
+            n = 2
+        elif lg == 'uz':
+            n = 1
+        text = main[0][n]
+        await state.update_data({'who':'Pr_a','LG':lg,'pr_id':user_id})
+        await message.answer(
+            f'{text}',
+            reply_markup=CreateInline(add_std='add student')
+        )
+
+    elif save_data is not None:
         await message.answer('Ваша заявка уже отправлена')
 
     elif student is not None:
-        lg = teacher[0][9]
+        lg = student[0][7]
         if lg == 'ru':
             n = 2
         elif lg == 'uz':
@@ -54,31 +77,6 @@ async def private_start(message:Message,state:FSMContext):
             f'{text}'
         )
 
-    elif teacher is not None:
-        lg = main[0][8]
-        if lg == 'ru':
-            n = 2
-        elif lg == 'uz':
-            n = 1
-        text = main[0][n]
-        await state.update_data({'LG':lg})
-        await message.answer(
-            f'{text}',
-            reply_markup=CreateInline(add_std='add students')
-        )
-
-    elif parent is not None:
-        lg = main[0][8]
-        if lg == 'ru':
-            n = 2
-        elif lg == 'uz':
-            n = 1
-        text = main[0][n]
-        await message.answer(
-            f'{text}',
-            reply_markup=CreateInline('add Children')
-        )
-
     else:
         text = main[0][1]
         await message.answer(
@@ -86,23 +84,42 @@ async def private_start(message:Message,state:FSMContext):
             reply_markup=CreateInline(tch='Teachers',std='Students',pr='Parents')
         )
         await state.set_state(StateUser.who)
+        await message.delete()
 
 @user_private_router.callback_query(F.data=='add_std')
-async def std(call:CallbackQuery,state:FSMContext):
-    data = await state.get_data()
-    lg = data.get('LG')
-    if lg == 'ru':
-        n = 2
-    elif lg == 'uz':
-        n = 1
-    main = db.read(DESCR,where_clause='title_id = 4')
-    des = main[0][n]
-    await call.message.answer(
-        des,
-        reply_markup=CreateBut([p[1] for p in db.read(BUT)],back_ru='Назад')
-    )
-    await state.set_state(StateUser.school)
+async def ste(call:CallbackQuery,state:FSMContext):
+    await call.message.answer('напишите уникальную id для вашего ученика')
+    await state.set_state(StateUser.un_id)
     await call.message.delete()
+
+@user_private_router.message(F.text,StateUser.un_id)
+async def std(message:Message,state:FSMContext):
+    un_id = message.text
+    if un_id.isdigit() and len(un_id) >= 5 and len(un_id) <= 15:
+        data = await state.get_data()
+        await state.update_data({'un_id':un_id})
+        # tch = data.get('tch_id')
+        # pr_id = data.get('pr_id')
+        # if tch:
+        #     await state.update_data({'who':'Tch_a','un_id':un_id})
+        # elif pr_id:
+        #     await state.update_data({'who':'Pr_a','un_id':un_id})        
+        lg = data.get('LG')
+        if lg == 'ru':
+            n = 2
+        elif lg == 'uz':
+            n = 1
+        main = db.read(DESCR,where_clause='title_id = 4')
+        des = main[0][n]
+        await message.answer(
+            des,
+            reply_markup=CreateBut([p[n] for p in db.read(BUT)],back_ru='Назад')
+        )
+        await state.set_state(StateUser.school)
+        await message.delete()
+    else:
+        await message.answer('Ведите только число\nчисло не должно быть меньше 5 и больше 15')
+        await message.delete()
 
 @user_private_router.callback_query(F.data,StateUser.who)
 async def tch(call:CallbackQuery,state:FSMContext):
@@ -111,6 +128,7 @@ async def tch(call:CallbackQuery,state:FSMContext):
     await state.update_data({'who':who,'user_id':user_id})
     await call.message.answer(text='Выберите язык',reply_markup=CreateInline(ru='Ru',uz='Uz'))
     await state.set_state(StateUser.ru)
+    await call.message.delete()
 
 # ru_start
 @user_private_router.callback_query(F.data=='ru',StateUser.ru)
@@ -151,6 +169,7 @@ async def mes(call:CallbackQuery,state:FSMContext):
     await call.message.answer(n)
     await call.message.edit_reply_markup(reply_markup=None)
     await state.set_state(StateUser.comment)
+    await call.message.delete()
 
 @user_private_router.message(StateUser.comment,F.text)
 async def mes1(message:Message,state:FSMContext):
@@ -168,6 +187,7 @@ async def mes1(message:Message,state:FSMContext):
         text=f'comment from user <a href="{url}"><b>{name}</b></a>:\n{comment}'
     )
     await message.answer(n)
+    await message.delete()
     await state.clear()
 
 @user_private_router.callback_query(F.data=='back_ru',StateUser.school)
@@ -178,8 +198,8 @@ async def cmd_ru(call:CallbackQuery,state:FSMContext):
         f'{text}',
         reply_markup=CreateInline(ru='Ru',uz='Uz')
     )
-    call.message.edit_reply_markup(reply_markup=None)
     await state.clear()
+    await call.message.delete()
 
 @user_private_router.callback_query(F.data,StateUser.school)
 async def name(call:CallbackQuery,state:FSMContext):
@@ -227,6 +247,7 @@ async def name1(message:Message,state:FSMContext):
     city = main[0][n]
     await message.answer(city)
     await state.set_state(StateUser.city)
+    await message.delete()
 
 @user_private_router.message(F.text,StateUser.city)
 async def city1(message:Message,state:FSMContext):
@@ -258,6 +279,7 @@ async def city1(message:Message,state:FSMContext):
     )
     await message.answer(number,reply_markup=contact_button)
     await state.set_state(StateUser.number)
+    await message.delete()
 
 @user_private_router.message(F.contains,StateUser.number)
 async def num(message:Message,state:FSMContext):
@@ -284,11 +306,13 @@ async def num(message:Message,state:FSMContext):
             reply_markup=CreateInline(bt,bt2)
         )
         await state.set_state(StateUser.py)
+        await message.delete()
     else:
         # Если номер не из Узбекистана
         await message.answer(
             test
         )
+        await message.delete()
 
 @user_private_router.callback_query((F.data == 'Оплатить Онляйн') | (F.data == 'Onlayn to\'lov'), StateUser.py)
 async def py(call:CallbackQuery,state:FSMContext):
@@ -312,17 +336,24 @@ async def handle_media(message: Message, state: FSMContext):
     title = data.get('title')
     muc = data.get('muc')
     school = data.get('school')
+    tch_id = data.get('tch_id')
 
     if lg == 'ru':
         bt = 'Да'
         bt2 = 'Нет'
         tex = 'Пожалуйста, отправьте Фото или PDF файл.'
-        test = f'Ваш профиль \n\nИмя: {title}\n\nШкола: {muc}\n\nКлаасс: {school}\n\nГород: {city}\n\nНомер: {num}\n\nваш чек отправить на проверку?'
+        if tch_id:
+            test = f'Профиль вашего ученика \n\nИмя: {title}\n\nШкола: {muc}\n\nКлаасс: {school}\n\nГород: {city}\n\nНомер: {num}\n\nваш чек отправить на проверку?'
+        else:
+            test = f'Ваш профиль \n\nИмя: {title}\n\nШкола: {muc}\n\nКлаасс: {school}\n\nГород: {city}\n\nНомер: {num}\n\nваш чек отправить на проверку?'
     elif lg == 'uz':
         tex = 'Iltimos, fotosurat yoki PDF faylini yuboring.'
         bt = 'Ha'
         bt2 = 'Yok'
-        test = f'Sizning profilingiz \n\nIsm: {title}\n\nMaktab: {muc}\n\nSnif: {school}\n\nTuman: {city}\n\nTelefon raqam: {num}\n\ntekshirish uchun chekingizni yuboring?'
+        if tch_id:
+            test = f'Sizning o\'quvchining profilingiz \n\nIsm: {title}\n\nMaktab: {muc}\n\nSnif: {school}\n\nTuman: {city}\n\nTelefon raqam: {num}\n\ntekshirish uchun chekingizni yuboring?'
+        else:
+            test = f'Sizning profilingiz \n\nIsm: {title}\n\nMaktab: {muc}\n\nSnif: {school}\n\nTuman: {city}\n\nTelefon raqam: {num}\n\ntekshirish uchun chekingizni yuboring?'
     
     if message.content_type == ContentType.PHOTO:
 
@@ -335,6 +366,7 @@ async def handle_media(message: Message, state: FSMContext):
             text=test,
             reply_markup=CreateInline(bt,bt2)
         )
+        await message.delete()
 
     elif message.content_type == ContentType.DOCUMENT:
         if message.document.mime_type == 'application/pdf':
@@ -346,14 +378,16 @@ async def handle_media(message: Message, state: FSMContext):
                 text=test,
                 reply_markup=CreateInline(bt,bt2)
             )
+            await message.delete()
     else:
         await message.answer(text=tex)
+        await message.delete()
 
 @user_private_router.callback_query((F.data=='Да') | (F.data == 'Ha'))
 async def yes(call:CallbackQuery,state:FSMContext):
     data = await state.get_data()
     lg = data.get("LG")
-    who = data.get("who")    
+    who = data.get("who")
     n = data.get('n')
     title = data.get('title')
     user_id = call.from_user.id
@@ -361,7 +395,8 @@ async def yes(call:CallbackQuery,state:FSMContext):
     city = data.get('city')
     num = data.get('num')
     muc = data.get('muc')
-    print('vpt:',who)
+    un_id = data.get('un_id')
+    un = int(un_id)
 
     button = InlineKeyboardBuilder()
     button.add(InlineKeyboardButton(text='Принять',callback_data=f'Tr_{user_id}'))
@@ -379,18 +414,31 @@ async def yes(call:CallbackQuery,state:FSMContext):
     if n == 1:
         photo_id = data.get("photo_id")
         url = data.get('url')
-
-        db.insert(
-            SAVE_DATA,
-            telegram_id = user_id,
-            who = who,
-            full_name = title,
-            class_name = muc, 
-            school = school,
-            city = city,
-            number = num,
-            language = ru
-        )
+        if un:
+            db.insert(
+                SAVE_DATA,
+                telegram_id = user_id,
+                who = who,
+                full_name = title,
+                class_name = muc, 
+                school = school,
+                city = city,
+                number = num,
+                language = ru,
+                un_id = un
+            )
+        else:
+            db.insert(
+                SAVE_DATA,
+                telegram_id = user_id,
+                who = who,
+                full_name = title,
+                class_name = muc, 
+                school = school,
+                city = city,
+                number = num,
+                language = ru
+            )
 
         await call.message.bot.send_photo(
                 chat_id= CHANEL_ID ,  # ID администратора
@@ -400,17 +448,31 @@ async def yes(call:CallbackQuery,state:FSMContext):
         )
     elif n == 2:
         doc = data.get('doc')
-        db.insert(
-                SAVE_DATA,
-                telegram_id = user_id,
-                who = who,
-                full_name = title,
-                class_name = muc,
-                school = school,
-                city = city,
-                number = num,
-                language = ru
-            )
+        if un:
+            db.insert(
+                    SAVE_DATA,
+                    telegram_id = user_id,
+                    who = who,
+                    full_name = title,
+                    class_name = muc,
+                    school = school,
+                    city = city,
+                    number = num,
+                    language = ru,
+                    un_id = un
+                )
+        else:
+            db.insert(
+                    SAVE_DATA,
+                    telegram_id = user_id,
+                    who = who,
+                    full_name = title,
+                    class_name = muc,
+                    school = school,
+                    city = city,
+                    number = num,
+                    language = ru
+                )
 
         await call.message.bot.send_document(
             chat_id= CHANEL_ID ,
@@ -418,8 +480,8 @@ async def yes(call:CallbackQuery,state:FSMContext):
             caption=f"PDF файл от пользователя <a href='{url}'><b>{title}</b></a>",
             reply_markup=button.as_markup()
         )
+        await call.message.delete()
     await call.message.answer(test,reply_markup=CreateInline(bt))
-    await call.message.edit_reply_markup(reply_markup=None)
 
 @user_private_router.callback_query((F.data=='Нет') | (F.data == 'Yoq'))
 async def net(call:CallbackQuery,state:FSMContext):
@@ -430,7 +492,7 @@ async def net(call:CallbackQuery,state:FSMContext):
     elif lg == 'uz':
         test = f'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
     await call.message.answer(test)
-    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.delete()
 
 @user_private_router.callback_query((F.data=='Прийти и заплатить') | (F.data == 'Borib tolash'),StateUser.py)
 async def py(call:CallbackQuery,state:FSMContext):
@@ -452,16 +514,30 @@ async def py(call:CallbackQuery,state:FSMContext):
         text=test,
         reply_markup=CreateInline(yees=bt,net=bt2)
     )
+    await call.message.delete()
 # ru_end
 @user_private_router.callback_query(F.data=='yees')
 async def tes(call:CallbackQuery,state:FSMContext):
     data = await state.get_data()
     num = data.get('num')
+    who = data.get('who')
     city = data.get('city')
     title = data.get('title')
     school = data.get('school')
+    un_id = data.get('un_id')
+    un = int(un_id)
     py = False
     user_id = call.from_user.id
+
+    teacher = db.read(
+        TEACHER_MOD,
+        where_clause=f'telegram_id = {user_id}'
+    )
+    parent = db.read(
+        PARENTS_MOD,
+        where_clause=f'telegram_id = {user_id}'
+    )
+
     lg = data.get("LG")
     if lg == 'ru':
         n = 2
@@ -469,22 +545,49 @@ async def tes(call:CallbackQuery,state:FSMContext):
     elif lg == 'uz':
         n = 1
         ru ='ru'
-    db.insert(
-        USERMOD, 
-        telegram_id=user_id, 
-        full_name=title, 
-        school=school, 
-        city=city, 
-        number=str(num), 
-        payment=py, 
-        language=ru
-    )
-    main = db.read(DESCR,where_clause=f'title_id = {1}')
+    if who == 'Tch_a':
+        teacher_id = teacher[0][0]
+        db.insert(
+            USERMOD,
+            teacher_id = teacher_id,
+            telegram_id = un,
+            full_name = title,
+            school = school,
+            city = city,
+            number = num,
+            payment = py,
+            language = lg
+        )
+    elif who == 'Pr_a':
+        parent_id = parent[0][0]
+        db.insert(
+            USERMOD,
+            parents_id = parent_id,
+            telegram_id = un,
+            full_name = title,
+            school = school,
+            city = city,
+            number = num,
+            payment = py,
+            language = lg
+        )
+    else:
+        db.insert(
+            USERMOD, 
+            telegram_id=user_id, 
+            full_name=title, 
+            school=school, 
+            city=city, 
+            number=str(num), 
+            payment=py, 
+            language=ru
+        )
+    main = db.read(DESCR,where_clause=f'title_id = 1')
     test = main[0][n]
     await call.message.answer(
         f'{test}'
     )
-    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.delete()
 
 
 @user_private_router.callback_query(F.data=='net')
@@ -496,4 +599,4 @@ async def net(call:CallbackQuery,state:FSMContext):
     elif lg == 'uz':
         test = f'Желаете пройти регистрацию заново?\n Нажмите суда -> /start'
     await call.message.answer(test)
-    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.delete()

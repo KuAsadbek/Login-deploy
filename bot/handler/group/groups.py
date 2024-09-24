@@ -21,11 +21,11 @@ async def one_cmd(message:Message):
 @group_router.callback_query(F.data=='send_excel')
 async def send(call:CallbackQuery):
     if db.read(USERMOD):
-        all_users_data = db.read(USERMOD)
-        true_users_data = db.read(USERMOD,where_clause='payment = 1')
-        false_users_data = db.read(USERMOD,where_clause='payment = 0')
-        # Создание файла Excel
-        file_path = create_excel_with_data(all_users_data, true_users_data, false_users_data, "user_data.xlsx")
+        Students = db.read(USERMOD)
+        Teacher = db.read(TEACHER_MOD)
+        Parents = db.read(PARENTS_MOD)
+
+        file_path = create_excel_with_data(Students=Students,Teacher=Teacher,Parents=Parents,file_name= "user_data.xlsx")
 
         # Проверка на существование файла
         if file_path and os.path.exists(file_path):
@@ -44,7 +44,14 @@ async def check(call:CallbackQuery):
     str_text, index = call.data.split('_')
     user_id = int(index)
     save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
-    
+    teacher = db.read(
+        TEACHER_MOD,
+        where_clause=f'telegram_id = {user_id}'
+    )
+    parent = db.read(
+        PARENTS_MOD,
+        where_clause=f'telegram_id = {user_id}'
+    )
     user = save_data[0][1]
     who = save_data[0][2]
     title = save_data[0][3]
@@ -53,6 +60,7 @@ async def check(call:CallbackQuery):
     city = save_data[0][6]
     num = save_data[0][7]
     lg = save_data[0][8]
+    un_id = save_data[0][9]
     py = True
 
     if lg == 'ru':
@@ -68,7 +76,41 @@ async def check(call:CallbackQuery):
     text = main[0][ru]
 
     if str_text == 'Tr':
-        if who == 'std':
+        if who == 'Tch_a':
+            teacher_id = teacher[0][0]
+            db.insert(
+                USERMOD,
+                teacher_id = teacher_id,
+                telegram_id = un_id,
+                full_name = title,
+                school = school,
+                city = city,
+                number = num,
+                payment = py,
+                language = lg
+            )
+            await call.message.bot.send_message(
+                chat_id=user_id,
+                text=f'{text}\n\n{r}'
+            )
+        elif who == 'Pr_a':
+            parent_id = parent[0][0]
+            db.insert(
+                USERMOD,
+                parents_id = parent_id,
+                telegram_id = un_id,
+                full_name = title,
+                school = school,
+                city = city,
+                number = num,
+                payment = py,
+                language = lg
+            )
+            await call.message.bot.send_message(
+                chat_id=user_id,
+                text=f'{text}\n\n{r}'
+            )
+        elif who == 'std':
             db.insert(
                 USERMOD,
                 telegram_id = user,
@@ -79,7 +121,6 @@ async def check(call:CallbackQuery):
                 payment = py,
                 language = lg
             )
-            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
             await call.message.bot.send_message(
                 chat_id=user_id,
                 text=f'{text}\n\n{r}'
@@ -96,7 +137,6 @@ async def check(call:CallbackQuery):
                 payment = py,
                 language = lg
             )
-            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
             await call.message.bot.send_message(
                 chat_id=user_id,
                 text=f'{text}\n\n{r}'
@@ -113,11 +153,11 @@ async def check(call:CallbackQuery):
                 payment = py,
                 language = lg
             )
-            db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
             await call.message.bot.send_message(
                 chat_id=user_id,
                 text=f'{text}\n\n{r}'
             )
+        db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
     elif str_text == 'Fr':           
 
         db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')

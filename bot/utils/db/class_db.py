@@ -50,14 +50,14 @@ class SQLiteCRUD:
         """Закрытие подключения к базе данных."""
         self.connection.close()
 
-
+TEACHER_MOD = 'main_app_teachermod'
+PARENTS_MOD = 'main_app_parentmod'
 DESCR = 'main_app_descriptionmod'
 USERMOD = 'main_app_usermod'
 CAT = 'main_app_categorymod'
 BUT = 'main_app_buttonmod'
 SAVE_DATA = 'main_app_save_user_data'
 
-db = SQLiteCRUD('./db.sqlite3')
-main = db.read(SAVE_DATA,where_clause=f'telegram_id = 1')
-
-print(main[0][1])
+# db = SQLiteCRUD('./db.sqlite3')
+# save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {78965}')
+# print(save_data[0][1])

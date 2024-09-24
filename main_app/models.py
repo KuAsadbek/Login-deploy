@@ -36,6 +36,7 @@ class save_user_data(models.Model):
     city = models.CharField(max_length=100,verbose_name='Tuman',null=True,blank=True)
     number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
     language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
+    un_id = models.BigIntegerField(verbose_name='Un_id',null=True,blank=True)
     
     def __str__(self):
         return self.full_name
