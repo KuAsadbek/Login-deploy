@@ -2,58 +2,62 @@ from django.db import models
 
 class ParentMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
-    full_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
+    parent_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
     school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
     class_name = models.CharField(max_length=100,verbose_name='klass',null=True,blank=True)
     city = models.CharField(max_length=100,verbose_name='Tuman',null=True,blank=True)
-    number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
-    payment = models.BooleanField(default=False,verbose_name='Tolov')
-    language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
-    
-    def __str__(self):
-        return self.full_name
-
-
-class TeacherMod(models.Model):
-    telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
-    full_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
-    school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
-    class_name = models.CharField(max_length=100,verbose_name='klass',null=True,blank=True)
-    city = models.CharField(max_length=100,verbose_name='Tuman',null=True,blank=True)
-    number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
+    parent_number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
     payment = models.BooleanField(default=False,verbose_name='Tolov',null=True,blank=True)
     language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
     
     def __str__(self):
-        return self.full_name
+        return self.parent_name
 
-class save_user_data(models.Model):
+
+class TeacherMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
-    who = models.CharField(max_length=5,null=True,blank=True,verbose_name='Qaysi foydalanuvchi')
-    full_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
+    teacher_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
     school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
     class_name = models.CharField(max_length=100,verbose_name='klass',null=True,blank=True)
     city = models.CharField(max_length=100,verbose_name='Tuman',null=True,blank=True)
-    number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
+    teacher_number = models.CharField(max_length=100,verbose_name='Telefon rakami',null=True,blank=True)
+    payment = models.BooleanField(default=False,verbose_name='Tolov',null=True,blank=True)
     language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
-    un_id = models.BigIntegerField(verbose_name='Un_id',null=True,blank=True)
     
     def __str__(self):
-        return self.full_name
+        return self.teacher_name
+
+class save_user_data(models.Model):
+    telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
+    who = models.CharField(max_length=10,null=True,blank=True,verbose_name='Qaysi foydalanuvchi')
+    school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
+    city = models.CharField(max_length=100,verbose_name='Tuman',null=True,blank=True)
+    class_name = models.CharField(max_length=100,verbose_name='class_name',null=True,blank=True)
+    teacher_name = models.CharField(max_length=100,verbose_name='teacher_name',null=True,blank=True)
+    student_name = models.CharField(max_length=100,verbose_name='student_name',null=True,blank=True)
+    student_number = models.CharField(max_length=100,verbose_name='student_number',null=True,blank=True)
+    teacher_number = models.CharField(max_length=100,verbose_name='teacher_number',null=True,blank=True)
+    language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
+    
+    def __str__(self):
+        return self.teacher_name
 
 class UserMod(models.Model):
     parents = models.ForeignKey(to=ParentMod,on_delete=models.CASCADE,verbose_name='Parents',null=True,blank=True)
-    teacher = models.ForeignKey(to=TeacherMod,on_delete=models.CASCADE,verbose_name='Teachers',null=True,blank=True)
+    teacher_name = models.ForeignKey(to=TeacherMod,on_delete=models.CASCADE,verbose_name='Teachers',null=True,blank=True)
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID')
-    full_name = models.CharField(max_length=100,verbose_name='ФИО')
-    school = models.CharField(max_length=100,verbose_name='Maktab')
+    student_name = models.CharField(max_length=100,verbose_name='student_name')
+    teacher_name1 = models.CharField(max_length=100,verbose_name='teacher_name1')
+    school = models.CharField(max_length=100,verbose_name='school')
+    class_name = models.CharField(max_length=100,verbose_name='class_name')
     city = models.CharField(max_length=100,verbose_name='Tuman')
-    number = models.CharField(max_length=100,verbose_name='Telefon rakami')
+    student_number = models.CharField(max_length=100,verbose_name='student_number')
+    teacher_number = models.CharField(max_length=100,verbose_name='teacher_number')
     payment = models.BooleanField(default=False,verbose_name='Tolov')
     language = models.CharField(max_length=5,verbose_name='Til')
 
     def __str__(self):
-        return self.full_name
+        return self.student_name
     
     class Meta:
         verbose_name = 'User'

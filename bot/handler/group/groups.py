@@ -44,7 +44,10 @@ async def send(call:CallbackQuery):
 async def check(call:CallbackQuery):
     str_text, index = call.data.split('_')
     user_id = int(index)
-    save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
+    save_data = db.read(
+        SAVE_DATA,
+        where_clause=f'telegram_id = {user_id}'
+    )
     teacher = db.read(
         TEACHER_MOD,
         where_clause=f'telegram_id = {user_id}'
@@ -53,16 +56,25 @@ async def check(call:CallbackQuery):
         PARENTS_MOD,
         where_clause=f'telegram_id = {user_id}'
     )
-    user = save_data[0][1]
     who = save_data[0][2]
-    title = save_data[0][3]
-    muc = save_data[0][4]
-    school = save_data[0][5]
-    city = save_data[0][6]
-    num = save_data[0][7]
-    lg = save_data[0][8]
-    un_id = save_data[0][9]
+    school = save_data[0][3]
+    city = save_data[0][4]
+    class_name = save_data[0][5]
+    teacher_name = save_data[0][6]
+    student_name = save_data[0][7]
+    student_number = save_data[0][8]
+    teacher_number = save_data[0][9]
+    lg = save_data[0][10]
     py = True
+
+    common_data = {
+        "telegram_id": user_id,
+        "school":school,
+        "city": city,
+        "class_name":class_name,
+        'payment':py,
+        "language": lg
+    }
 
     if lg == 'ru':
             ru = 2
@@ -75,96 +87,188 @@ async def check(call:CallbackQuery):
     
     main = db.read(DESCR,where_clause=f'title_id = 1')
     text = main[0][ru]
-
     if str_text == 'Tr':
         if who == 'Tch_a':
             teacher_id = teacher[0][0]
-            db.insert(
-                USERMOD,
-                teacher_id = teacher_id,
-                telegram_id = un_id,
-                full_name = title,
-                school = school,
-                city = city,
-                number = num,
-                payment = py,
-                language = lg
-            )
-            await call.message.bot.send_message(
-                chat_id=user_id,
-                text=f'{text}\n\n{r}'
-            )
+            common_data["teacher_name_id"] = teacher_id
+            common_data["teacher_number"] = teacher_number
+            common_data["student_name"] = student_name
+            common_data["student_number"] = student_number
+            db.insert(USERMOD, **common_data)
         elif who == 'Pr_a':
             parent_id = parent[0][0]
-            db.insert(
-                USERMOD,
-                parents_id = parent_id,
-                telegram_id = un_id,
-                full_name = title,
-                school = school,
-                city = city,
-                number = num,
-                payment = py,
-                language = lg
-            )
-            await call.message.bot.send_message(
-                chat_id=user_id,
-                text=f'{text}\n\n{r}'
-            )
+            common_data["parents_id"] = parent_id
+            common_data["teacher_number"] = teacher_number
+            common_data["student_name"] = student_name
+            common_data["student_number"] = student_number
+            db.insert(USERMOD, **common_data)
         elif who == 'std':
-            db.insert(
-                USERMOD,
-                telegram_id = user,
-                full_name = title,
-                school = school,
-                city = city,
-                number = num,
-                payment = py,
-                language = lg
-            )
-            await call.message.bot.send_message(
-                chat_id=user_id,
-                text=f'{text}\n\n{r}'
-            )
+            common_data["teacher_number"] = teacher_number
+            common_data["student_name"] = student_name
+            common_data["teacher_name"] = teacher_name
+            common_data["student_number"] = student_number
+            db.insert(USERMOD, **common_data)
         elif who == 'tch':
-            db.insert(
-                TEACHER_MOD,
-                telegram_id = user,
-                full_name = title,
-                school = school,
-                class_name = muc,
-                city = city,
-                number = num,
-                payment = py,
-                language = lg
-            )
-            await call.message.bot.send_message(
-                chat_id=user_id,
-                text=f'{text}\n\n{r}'
-            )
-        elif who == 'pr':
-            db.insert(
-                PARENTS_MOD,
-                telegram_id = user,
-                full_name = title,
-                school = school,
-                class_name = muc,
-                city = city,
-                number = num,
-                payment = py,
-                language = lg
-            )
-            await call.message.bot.send_message(
-                chat_id=user_id,
-                text=f'{text}\n\n{r}'
-            )
-        db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
-    elif str_text == 'Fr':           
+            common_data["teacher_number"] = teacher_number
+            common_data["teacher_name"] = teacher_name
+            db.insert(TEACHER_MOD, **common_data)
+        else:
+            common_data["teacher_number"] = teacher_number
+            common_data["teacher_name"] = teacher_name
+            db.insert(PARENTS_MOD, **common_data)
 
-        db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
-
+        await call.message.bot.send_message(
+            chat_id=user_id,
+            text=f'{text}\n\n{r}'
+        )
+    else:           
         await call.message.bot.send_message(
             chat_id=user_id,
             text=f'{u}'
         )
+    db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
     await call.message.edit_reply_markup(reply_markup=None)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# @group_router.callback_query(lambda c: c.data and c.data.startswith('Tr_') or c.data.startswith('Fr_'))
+# async def check(call:CallbackQuery):
+#     str_text, index = call.data.split('_')
+#     user_id = int(index)
+#     save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
+#     teacher = db.read(
+#         TEACHER_MOD,
+#         where_clause=f'telegram_id = {user_id}'
+#     )
+#     parent = db.read(
+#         PARENTS_MOD,
+#         where_clause=f'telegram_id = {user_id}'
+#     )
+#     user = save_data[0][1]
+#     who = save_data[0][2]
+#     title = save_data[0][3]
+#     muc = save_data[0][4]
+#     school = save_data[0][5]
+#     city = save_data[0][6]
+#     num = save_data[0][7]
+#     lg = save_data[0][8]
+#     un_id = save_data[0][9]
+#     py = True
+
+#     if lg == 'ru':
+#             ru = 2
+#             r = 'Чек прошел проверку!!!'
+#             u = 'Чек не прошел проверку!!!\n Пройдите регистрацию заново -> /start'
+#     else:
+#         ru = 1
+#         r = 'Chek tasdiqlandi!!!'
+#         u = 'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
+    
+#     main = db.read(DESCR,where_clause=f'title_id = 1')
+#     text = main[0][ru]
+
+#     if str_text == 'Tr':
+#         if who == 'Tch_a':
+#             teacher_id = teacher[0][0]
+#             db.insert(
+#                 USERMOD,
+#                 teacher_id = teacher_id,
+#                 telegram_id = un_id,
+#                 full_name = title,
+#                 school = school,
+#                 city = city,
+#                 number = num,
+#                 payment = py,
+#                 language = lg
+#             )
+#             await call.message.bot.send_message(
+#                 chat_id=user_id,
+#                 text=f'{text}\n\n{r}'
+#             )
+#         elif who == 'Pr_a':
+#             parent_id = parent[0][0]
+#             db.insert(
+#                 USERMOD,
+#                 parents_id = parent_id,
+#                 telegram_id = un_id,
+#                 full_name = title,
+#                 school = school,
+#                 city = city,
+#                 number = num,
+#                 payment = py,
+#                 language = lg
+#             )
+#             await call.message.bot.send_message(
+#                 chat_id=user_id,
+#                 text=f'{text}\n\n{r}'
+#             )
+#         elif who == 'std':
+#             db.insert(
+#                 USERMOD,
+#                 telegram_id = user,
+#                 full_name = title,
+#                 school = school,
+#                 city = city,
+#                 number = num,
+#                 payment = py,
+#                 language = lg
+#             )
+#             await call.message.bot.send_message(
+#                 chat_id=user_id,
+#                 text=f'{text}\n\n{r}'
+#             )
+#         elif who == 'tch':
+#             db.insert(
+#                 TEACHER_MOD,
+#                 telegram_id = user,
+#                 full_name = title,
+#                 school = school,
+#                 class_name = muc,
+#                 city = city,
+#                 number = num,
+#                 payment = py,
+#                 language = lg
+#             )
+#             await call.message.bot.send_message(
+#                 chat_id=user_id,
+#                 text=f'{text}\n\n{r}'
+#             )
+#         elif who == 'pr':
+#             db.insert(
+#                 PARENTS_MOD,
+#                 telegram_id = user,
+#                 full_name = title,
+#                 school = school,
+#                 class_name = muc,
+#                 city = city,
+#                 number = num,
+#                 payment = py,
+#                 language = lg
+#             )
+#             await call.message.bot.send_message(
+#                 chat_id=user_id,
+#                 text=f'{text}\n\n{r}'
+#             )
+#         db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')        
+#     elif str_text == 'Fr':           
+
+#         db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id}')
+
+#         await call.message.bot.send_message(
+#             chat_id=user_id,
+#             text=f'{u}'
+#         )
+#     await call.message.edit_reply_markup(reply_markup=None)
