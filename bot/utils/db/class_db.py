@@ -59,9 +59,7 @@ BUT = 'main_app_buttonmod'
 SAVE_DATA = 'main_app_save_user_data'
 
 # db = SQLiteCRUD('./db.sqlite3')
-# teacher = db.read(
-#         TEACHER_MOD,
-#         where_clause=f'telegram_id = {767560862}'
-#     )
-# des = teacher[0][8]
-# print(des)
+# student_name = 'admin!767560862!8695'  # Замените 'stdname' на фактическое имя студента или переменную
+# teacher = db.read(SAVE_DATA, where_clause=f'telegram_id = 767560862 AND student_name = "{student_name}"')
+# name,ir,ee = teacher[0][7].split("!")
+# print(name)
