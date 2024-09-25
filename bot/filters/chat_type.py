@@ -28,15 +28,15 @@ def style_body_cells(sheet, columns):
             cell.alignment = Alignment(horizontal="left", vertical="center")  # Выравнивание по левому краю
 
 # Функция для раскрашивания ячеек в колонке 'G' в зависимости от значения
-# def style_column_g(sheet):
-#     green_fill = PatternFill(fill_type="solid", start_color="00FF00", end_color="00FF00")  # Зеленый цвет
-#     red_fill = PatternFill(fill_type="solid", start_color="FF0000", end_color="FF0000")  # Красный цвет
+def style_column_g(sheet):
+    green_fill = PatternFill(fill_type="solid", start_color="00FF00", end_color="00FF00")  # Зеленый цвет
+    red_fill = PatternFill(fill_type="solid", start_color="FF0000", end_color="FF0000")  # Красный цвет
     
-#     for cell in sheet['G'][1:]:  # Пропускаем заголовок (начинаем с 1 строки)
-#         if cell.value == 1:
-#             cell.fill = green_fill
-#         elif cell.value == 0:
-#             cell.fill = red_fill
+    for cell in sheet['G'][1:]:  # Пропускаем заголовок (начинаем с 1 строки)
+        if cell.value == 1:
+            cell.fill = green_fill
+        elif cell.value == 0:
+            cell.fill = red_fill
 
 # Функция для создания листа и стилизации
 def create_sheet(workbook, sheet_title, data, headers):
@@ -47,7 +47,7 @@ def create_sheet(workbook, sheet_title, data, headers):
     columns_to_style = ["A", "B", "C", "D", "E", "F", "G", "H"]
     style_header_cells(sheet, columns_to_style)
     style_body_cells(sheet, columns_to_style)
-    # style_column_g(sheet)
+    style_column_g(sheet)
 
 # Основная функция для создания Excel файла с улучшенной стилизацией
 def create_excel_with_data(Students, Teacher, Parents, file_name="output.xlsx"):

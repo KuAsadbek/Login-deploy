@@ -58,7 +58,10 @@ CAT = 'main_app_categorymod'
 BUT = 'main_app_buttonmod'
 SAVE_DATA = 'main_app_save_user_data'
 
-db = SQLiteCRUD('./db.sqlite3')
-main =  db.read(DESCR,where_clause='title_id = 1')
-des = main[0][1]
-print(des)
+# db = SQLiteCRUD('./db.sqlite3')
+# teacher = db.read(
+#         TEACHER_MOD,
+#         where_clause=f'telegram_id = {767560862}'
+#     )
+# des = teacher[0][8]
+# print(des)

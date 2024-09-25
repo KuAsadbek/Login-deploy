@@ -90,17 +90,23 @@ async def check(call:CallbackQuery):
     if str_text == 'Tr':
         if who == 'Tch_a':
             teacher_id = teacher[0][0]
+            tch_name = teacher[0][2]
+            tch_num = teacher[0][6]
             common_data["teacher_name_id"] = teacher_id
-            common_data["teacher_number"] = teacher_number
+            common_data["teacher_name1"] = tch_name
+            common_data["teacher_number"] = tch_num
             common_data["student_name"] = student_name
-            common_data["student_number"] = student_number
+            common_data["student_number"] = teacher_number
             db.insert(USERMOD, **common_data)
         elif who == 'Pr_a':
             parent_id = parent[0][0]
+            pr_name = parent[0][2]
+            pr_num = parent[0][6]
             common_data["parents_id"] = parent_id
-            common_data["teacher_number"] = teacher_number
+            common_data["teacher_name1"] = pr_name
+            common_data["teacher_number"] = pr_num
             common_data["student_name"] = student_name
-            common_data["student_number"] = student_number
+            common_data["student_number"] = teacher_number
             db.insert(USERMOD, **common_data)
         elif who == 'std':
             common_data["teacher_number"] = teacher_number

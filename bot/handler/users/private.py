@@ -37,7 +37,7 @@ async def private_start(message:Message,state:FSMContext):
     )
 
     if teacher is not None:
-        lg = teacher[0][7]
+        lg = teacher[0][8]
         n = 2 if lg == 'ru' else 1
         text = main[0][n]
         await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
@@ -47,7 +47,7 @@ async def private_start(message:Message,state:FSMContext):
         )
 
     elif parent is not None:
-        lg = parent[0][7]
+        lg = parent[0][8]
         n = 2 if lg == 'ru' else 1
         text = main[0][n]
         await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
@@ -76,6 +76,46 @@ async def private_start(message:Message,state:FSMContext):
         await state.set_state(StateUser.ru)
         await message.delete()
 
+
+@user_private_router.callback_query((F.data=='Оставить комментарий') | (F.data == 'Izoh koldiring'))
+async def mes(call:CallbackQuery,state:FSMContext):
+    data = await state.get_data()
+    lg = data.get("LG")
+    if lg == 'ru':
+        n = 'Ваш комментарий'
+    elif lg == 'uz':
+        n = 'Izoh'
+    await call.message.answer(n)
+    await state.set_state(StateUser.comment)
+
+@user_private_router.message(StateUser.comment,F.text)
+async def mes1(message:Message,state:FSMContext):
+    data = await state.get_data()
+    lg = data.get("LG")
+    comment = message.text
+    url = message.from_user.url
+    name = message.from_user.full_name
+    if lg == 'ru':
+        n = 'спасибо за коммент'
+    elif lg == 'uz':
+        n = 'Izoh kildirganigiz uchun harmat'
+    await message.bot.send_message(
+        chat_id=CHANEL_ID,
+        text=f'comment from user <a href="{url}"><b>{name}</b></a>:\n{comment}',parse_mode=None
+    )
+    await message.answer(n)
+
+
+@user_private_router.callback_query(F.data=='back_ru',StateUser.school)
+async def cmd_ru(call:CallbackQuery,state:FSMContext):
+    main = db.read(DESCR,where_clause=f'title_id = {1}')
+    text = main[0][1]
+    await call.message.answer(
+        f'{text}',
+        reply_markup=CreateInline(ru='Ru',uz='Uz')
+    )
+    await call.message.delete()
+    await state.set_state(StateUser.ru)
 
 @user_private_router.callback_query(F.data=='add_std')
 async def ste(call:CallbackQuery,state:FSMContext):
@@ -251,6 +291,7 @@ async def num(message:Message,state:FSMContext):
     lg = data.get("LG")
     who = data.get('who')
     num = message.contact.phone_number
+    print(num)
     n = 2 if lg == 'ru' else 1
     if who == 'std':
         main = db.read(DESCR,where_clause='title_id = 11')
@@ -258,7 +299,7 @@ async def num(message:Message,state:FSMContext):
 
         await state.update_data({'student_num':num})
 
-        if num.startswith('+380') or num.startswith('998') and len(num) == 13:
+        if num.startswith('+998') or num.startswith('998'):
             await message.answer(
                 text=text
             )
@@ -281,7 +322,8 @@ async def num(message:Message,state:FSMContext):
         main = db.read(DESCR,where_clause='title_id = 7')
         py = main[0][n]
         
-        if num.startswith('+380') or num.startswith('998') and len(num) == 13:
+        if num.startswith('+998') or num.startswith('998'):
+            print(num)
             await message.answer(
                 py,
                 reply_markup=CreateInline(bt,bt2)
@@ -313,7 +355,7 @@ async def nur(message:Message,state:FSMContext):
     elif message.text:
         teacher_num = message.text
         
-    if teacher_num.startswith('+380') or teacher_num.startswith('998') and len(teacher_num) == 13 or len(teacher_num) == 12:
+    if teacher_num.startswith('+998') or teacher_num.startswith('998') and len(teacher_num) == 13 or len(teacher_num) == 12:
         main = db.read(DESCR,where_clause='title_id = 7')
         py = main[0][n]
         await message.answer(
@@ -546,31 +588,37 @@ async def tes(call:CallbackQuery,state:FSMContext):
 
     if who == 'std':
         common_data["student_name"] = student_name
-        common_data["teacger_name1"] = teacher_name
+        common_data["teacher_name1"] = teacher_name
         common_data["teacher_number"] = teacher_num
         common_data["student_number"] = student_num
         db.insert(USERMOD, **common_data)
     elif who == 'Tch_a':
         teacher_id = teacher[0][0]
+        tch_name = teacher[0][2]
+        tch_num = teacher[0][6]
         common_data["teacher_name_id"] = teacher_id
-        common_data["teacher_number"] = teacher_num
+        common_data["teacher_name1"] = tch_name
+        common_data["teacher_number"] = tch_num
         common_data["student_name"] = student_name
-        common_data["student_number"] = student_num
+        common_data["student_number"] = teacher_num
         db.insert(USERMOD, **common_data)
     elif who == 'Pr_a':
         parent_id = parent[0][0]
+        pr_name = parent[0][2]
+        pr_num = parent[0][6]
         common_data["parents_id"] = parent_id
-        common_data["teacher_number"] = teacher_num
+        common_data["teacher_name1"] = pr_name
+        common_data["teacher_number"] = pr_num
         common_data["student_name"] = student_name
         common_data["student_number"] = teacher_num
         db.insert(USERMOD, **common_data)
     elif who == 'tch':
-        common_data["teacger_name"] = teacher_name
+        common_data["teacher_name"] = teacher_name
         common_data["teacher_number"] = teacher_num
         db.insert(TEACHER_MOD, **common_data)
     elif who == 'pr':
-        common_data["teacger_name"] = teacher_name
-        common_data["teacher_number"] = teacher_num
+        common_data["parent_name"] = teacher_name
+        common_data["parent_number"] = teacher_num
         db.insert(PARENTS_MOD, **common_data)
         
     main = db.read(DESCR,where_clause=f'title_id = 1')

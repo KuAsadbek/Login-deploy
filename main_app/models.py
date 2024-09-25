@@ -40,7 +40,7 @@ class save_user_data(models.Model):
     language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
     
     def __str__(self):
-        return self.teacher_name
+        return self.teacher_name if self.teacher_name else self.student_name
 
 class UserMod(models.Model):
     parents = models.ForeignKey(to=ParentMod,on_delete=models.CASCADE,verbose_name='Parents',null=True,blank=True)
