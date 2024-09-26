@@ -1,8 +1,48 @@
-from aiogram.types import Message,ContentType
+import openpyxl
 from aiogram.filters import Filter
 from aiogram.filters import BaseFilter
-import openpyxl
+from aiogram.types import Message,ContentType
 from openpyxl.styles import Font, Border, Side, Alignment, PatternFill
+
+from ..utils.db.class_db import SQLiteCRUD
+from set_app.settings import USERMOD,PARENTS_MOD,TEACHER_MOD
+
+db = SQLiteCRUD('./db.sqlite3')
+
+# TEACHER_MOD = 'main_app_teachermod'
+# PARENTS_MOD = 'main_app_parentmod'
+# USERMOD = 'main_app_usermod'
+
+def generate_unique_code(cod):
+        base_code = cod
+        counter = 0
+        
+        # Разделяем буквы и числа один раз
+        letter_part, number_part = base_code.split('-')
+        number_part = int(number_part)
+
+        # Один запрос для проверки наличия кода сразу во всех моделях
+        def is_code_exists(code):
+            parent_exists = db.read(USERMOD,where_clause=f'code = "{code}"')
+            user_exists = db.read(TEACHER_MOD,where_clause=f'code = "{code}"')
+            teacher_exists = db.read(PARENTS_MOD,where_clause=f'code = "{code}"')
+            
+            return bool(parent_exists or user_exists or teacher_exists)
+
+
+        # Проверяем сразу первый код
+        if not is_code_exists(base_code):
+            return base_code
+
+        # Если код существует, увеличиваем счётчик и генерируем новый код
+        while True:
+            counter += 1
+            new_code = f"{letter_part}-{number_part + counter}"
+            
+            if not is_code_exists(new_code):
+                return new_code
+
+
 
 # Функция для стилизации ячеек с заголовками
 def style_header_cells(sheet, columns):

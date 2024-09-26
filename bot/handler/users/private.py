@@ -4,11 +4,11 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.command import CommandStart
 from aiogram.types import Message,CallbackQuery,KeyboardButton,ReplyKeyboardMarkup,ContentType,InlineKeyboardButton
-from set_app.settings import BUT,DESCR,USERMOD,CHANEL_ID,SAVE_DATA,TEACHER_MOD,PARENTS_MOD
+from set_app.settings import BUT,DESCR,USERMOD,CHANEL_ID,SAVE_DATA,TEACHER_MOD,PARENTS_MOD,CODE_MOD
 
 from ...utils.db.class_db import SQLiteCRUD
 from ...states.state_user.state_us import StateUser
-from ...filters.chat_type import chat_type_filter,MediaFilter
+from ...filters.chat_type import chat_type_filter,MediaFilter,generate_unique_code
 from ...keyboards.inline.button import CreateInline,CreateBut
 
 user_private_router = Router()
@@ -440,10 +440,22 @@ async def yes(call:CallbackQuery,state:FSMContext):
         unique_suffix = f"{user_id}!{random.randint(1000, 9999)}"  # Добавление user_id и случайного числа
         std_name = f'{student_name}!{unique_suffix}'
     else:
-        std_name = student_name
+        std_name = f'{student_name}!del'
+    
+    comm = {
+        3:'A',
+        4:'B',
+        5:'C',
+        6:'D',
+        7:'E',
+    }
+    index = int(''.join(filter(str.isdigit, school)))
+    code = f"{comm[index]}-100"
+    unique_code = generate_unique_code(code)
 
     common_data = {
         "telegram_id": user_id,
+        'code':unique_code,
         "who": who,
         "school": school,
         "city": city,
@@ -562,17 +574,23 @@ async def tes(call:CallbackQuery,state:FSMContext):
 
     n,ru = (2,'ru') if lg == 'ru' else (1,'uz')
 
-    teacher = db.read(
-        TEACHER_MOD,
-        where_clause=f'telegram_id = {user_id}'
-    )
-    parent = db.read(
-        PARENTS_MOD,
-        where_clause=f'telegram_id = {user_id}'
-    )
+    teacher = db.read(TEACHER_MOD,where_clause=f'telegram_id = {user_id}')
+    parent = db.read(PARENTS_MOD,where_clause=f'telegram_id = {user_id}')
+
+    comm = {
+        3:'A',
+        4:'B',
+        5:'C',
+        6:'D',
+        7:'E',
+    }
+    index = int(''.join(filter(str.isdigit, school)))
+    code = f"{comm[index]}-100"
+    unique_code = generate_unique_code(code)
 
     common_data = {
         "telegram_id": user_id,
+        'code':unique_code,
         "school": school,
         "class_name": muc,
         "city": city,
@@ -625,7 +643,7 @@ async def tes(call:CallbackQuery,state:FSMContext):
         db.insert(PARENTS_MOD, **common_data)
     main = db.read(DESCR,where_clause=f'title_id = 1')
     test = main[0][n]
-    await call.message.answer(f'{test}')
+    await call.message.answer(f'{test}\n\nyour uniqal code: {unique_code}')
     await state.clear()
 
 @user_private_router.callback_query(F.data=='neet',StateUser.yep)

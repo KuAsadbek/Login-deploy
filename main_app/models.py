@@ -2,6 +2,7 @@ from django.db import models
 
 class ParentMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
+    code = models.CharField(max_length=50,verbose_name='Code',null=True,blank=True)
     parent_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
     school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
     class_name = models.CharField(max_length=100,verbose_name='klass',null=True,blank=True)
@@ -16,6 +17,7 @@ class ParentMod(models.Model):
 
 class TeacherMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID',null=True,blank=True)
+    code = models.CharField(max_length=50,verbose_name='Code',null=True,blank=True)
     teacher_name = models.CharField(max_length=100,verbose_name='ФИО',null=True,blank=True)
     school = models.CharField(max_length=100,verbose_name='Maktab',null=True,blank=True)
     class_name = models.CharField(max_length=100,verbose_name='klass',null=True,blank=True)
@@ -38,6 +40,7 @@ class save_user_data(models.Model):
     student_number = models.CharField(max_length=100,verbose_name='student_number',null=True,blank=True)
     teacher_number = models.CharField(max_length=100,verbose_name='teacher_number',null=True,blank=True)
     language = models.CharField(max_length=5,verbose_name='Til',null=True,blank=True)
+    code = models.CharField(max_length=50,verbose_name='Code',null=True,blank=True)
     
     def __str__(self):
         return self.teacher_name if self.teacher_name else self.student_name
@@ -45,6 +48,7 @@ class save_user_data(models.Model):
 class UserMod(models.Model):
     parents = models.ForeignKey(to=ParentMod,on_delete=models.CASCADE,verbose_name='Parents',null=True,blank=True)
     teacher_name = models.ForeignKey(to=TeacherMod,on_delete=models.CASCADE,verbose_name='Teachers',null=True,blank=True)
+    code = models.CharField(max_length=50,verbose_name='Code',null=True,blank=True)
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID')
     student_name = models.CharField(max_length=100,verbose_name='student_name')
     teacher_name1 = models.CharField(max_length=100,verbose_name='teacher_name1')
