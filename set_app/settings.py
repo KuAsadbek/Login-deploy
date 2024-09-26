@@ -132,7 +132,6 @@ ADMIN_ID = [7675608621]
 CHANEL_ID = -1002020757864
 
 TEACHER_MOD = 'main_app_teachermod'
-CODE_MOD = 'main_app_codemod'
 PARENTS_MOD = 'main_app_parentmod'
 DESCR = 'main_app_descriptionmod'
 USERMOD = 'main_app_usermod'

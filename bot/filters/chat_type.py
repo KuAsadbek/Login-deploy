@@ -5,13 +5,18 @@ from aiogram.types import Message,ContentType
 from openpyxl.styles import Font, Border, Side, Alignment, PatternFill
 
 from ..utils.db.class_db import SQLiteCRUD
-from set_app.settings import USERMOD,PARENTS_MOD,TEACHER_MOD
+from set_app.settings import USERMOD,PARENTS_MOD,TEACHER_MOD,DESCR
 
 db = SQLiteCRUD('./db.sqlite3')
 
-# TEACHER_MOD = 'main_app_teachermod'
-# PARENTS_MOD = 'main_app_parentmod'
-# USERMOD = 'main_app_usermod'
+def get_text_and_language(user_record, lg_index):
+        main = db.read(DESCR,where_clause=f'title_id = 1')
+        if user_record == 'start':
+            return main[0][lg_index]
+        else:
+            lg = user_record[0][lg_index]
+            n = 2 if lg == 'ru' else 1
+            return main[0][n], lg
 
 def generate_unique_code(cod):
         base_code = cod
@@ -29,7 +34,6 @@ def generate_unique_code(cod):
             
             return bool(parent_exists or user_exists or teacher_exists)
 
-
         # Проверяем сразу первый код
         if not is_code_exists(base_code):
             return base_code
@@ -41,8 +45,6 @@ def generate_unique_code(cod):
             
             if not is_code_exists(new_code):
                 return new_code
-
-
 
 # Функция для стилизации ячеек с заголовками
 def style_header_cells(sheet, columns):
@@ -119,7 +121,6 @@ class chat_type_filter(Filter):
 
     async def __call__(self,message:Message) -> bool:
         return message.chat.type in self.chat_types
-
 
 class MediaFilter(BaseFilter):
     async def __call__(self, message: Message) -> bool:

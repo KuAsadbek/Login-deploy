@@ -120,7 +120,7 @@ async def check(call:CallbackQuery):
 
         db.insert(USERMOD if who in ['std', 'Tch_a', 'Pr_a'] else (TEACHER_MOD if who == 'tch' else PARENTS_MOD), **common_data)
 
-        await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message} \n\nyour code:{code}')
+        await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\nжелаете перейти в главную меню -> /start\n\nyour code:{code}')
     else:
         await call.message.bot.send_message(chat_id=user_id,text=f'{fail_message}')
     db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')
