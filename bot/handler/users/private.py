@@ -8,7 +8,7 @@ from set_app.settings import BUT,DESCR,USERMOD,CHANEL_ID,SAVE_DATA,TEACHER_MOD,P
 
 from ...utils.db.class_db import SQLiteCRUD
 from ...states.state_user.state_us import StateUser
-from ...filters.chat_type import chat_type_filter,MediaFilter,generate_unique_code,get_text_and_language
+from ...filters.chat_type import chat_type_filter,MediaFilter,generate_unique_code,get_text_and_language,is_uzbek_number
 from ...keyboards.inline.button import CreateInline,CreateBut
 
 user_private_router = Router()
@@ -29,16 +29,16 @@ async def private_start(message:Message,state:FSMContext):
     if teacher is not None:
         text,lg = get_text_and_language(teacher,8)
         await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
-        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add students'))
+        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add students',code='Code'))
 
     elif parent is not None:
         text,lg = get_text_and_language(parent,8)
         await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
-        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add student'))
+        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add student',code='Code'))
 
     elif student is not None:
-        text,lg = get_text_and_language(student,7)
-        await message.answer(f'{text}')
+        text,lg = get_text_and_language(student,11)
+        await message.answer(f'{text}',code='Code')
 
     elif save_data is not None:
         await message.answer('Ваша заявка уже отправлена')
@@ -47,6 +47,64 @@ async def private_start(message:Message,state:FSMContext):
         text = get_text_and_language('start',1)
         await message.answer(f'{text}',reply_markup=CreateInline(ru='Ru',uz='Uz'))
         await state.set_state(StateUser.ru)
+
+@user_private_router.callback_query(F.data == 'code')
+async def cod(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lg = data.get('LG')
+    user_id = call.from_user.id
+    who = data.get('who')
+
+    # Define messages in different languages
+    messages = {
+        'ru': {
+            'your_code': 'Студент(ы) с кодом:\n{students}',
+            'no_students': 'Студентов нет',
+        },
+        'uz': {
+            'your_code': 'O‘quvchilar kod bilan:\n{students}',
+            'no_students': 'studentlar mavjud emas',
+        }
+    }
+
+    # Get language messages
+    lang = messages.get(lg, messages['ru'])
+
+    students = []  # Store students with their codes
+
+    if who == 'Tch_a':
+        teacher = db.read(TEACHER_MOD, where_clause=f'telegram_id = {user_id}')
+        if teacher:
+            tch_id = teacher[0][0]
+            students = db.read(USERMOD, where_clause=f'teacher_name_id = {tch_id}')
+        else:
+            await call.message.answer(lang['no_students'])
+            return
+
+    elif who == 'Pr_a':
+        parent = db.read(PARENTS_MOD, where_clause=f'telegram_id = {user_id}')
+        if parent:
+            parent_id = parent[0][0]
+            students = db.read(USERMOD, where_clause=f'parents_id = {parent_id}')
+        else:
+            await call.message.answer(lang['no_students'])
+            return
+
+    else:
+        user = db.read(USERMOD, where_clause=f'telegram_id = {user_id}')
+        if user:
+            students.append(user[0])
+        else:
+            await call.message.answer(lang['no_students'])
+            return
+
+    # Extract and format the student codes
+    if students:
+        student_codes = "\n".join([f"{"Имя:" if lg == 'ru' else 'Ismi:'} {student[3]} -> code {student[1]}" for student in students])
+        await call.message.answer(lang['your_code'].format(students=student_codes))
+    else:
+        await call.message.answer(lang['no_students'])
+
 
 @user_private_router.callback_query((F.data=='Оставить комментарий') | (F.data == 'Izoh koldiring'))
 async def mes(call:CallbackQuery,state:FSMContext):
@@ -213,11 +271,7 @@ async def nme(message:Message,state:FSMContext):
             resize_keyboard=True,
             one_time_keyboard=True
         )
-        # if who in ['Tch_a','Pr_a']:
-        #     main = db.read(DESCR,where_clause='title_id = 13')[0][n]
-        # else:
         main = db.read(DESCR,where_clause='title_id = 8')[0][n]
-
         await message.answer(text=main,reply_markup=contact_button)
         await state.set_state(StateUser.number)
 
@@ -261,9 +315,6 @@ async def num(message:Message,state:FSMContext):
     who = data.get('who')
     n = 2 if lg == 'ru' else 1
 
-    def is_uzbek_number(phone_number):
-        return phone_number.startswith('+998') or phone_number.startswith('998')
-    
     texts = {
         "ru": {
             "online_payment": "Оплатить Онляйн",
@@ -330,12 +381,9 @@ async def nur(message:Message,state:FSMContext):
     error_text = current_texts["error_text"]
     n = current_texts["n"]
 
-    def is_valid_phone_number(phone_number):
-        return (phone_number.startswith('+998') or phone_number.startswith('998')) and len(phone_number) in [12, 13]
-
     teacher_num = message.contact.phone_number if message.contact else message.text
         
-    if is_valid_phone_number(teacher_num):
+    if is_uzbek_number(teacher_num):
         main = db.read(DESCR,where_clause='title_id = 10')
         py = main[0][n]
         await message.answer(py,reply_markup=CreateInline(bt,bt2))
@@ -375,28 +423,45 @@ async def handle_media(message: Message, state: FSMContext):
             "confirm_text": "ваш чек отправить на проверку?",
             "bt_yes": "Да",
             "bt_no": "Нет",
-            "student_profile": f"Ваш профиль \n\nИмя учителя: {teacher_name}\n\nИмя: {student_name}\n\nШкола: {muc}\n\nКласс: {school}\n\nГород: {city}\n\nНомер учителя: {teacher_num}\n\nНомер: {student_num}\n\n",
-            "teacher_profile": f"Ваш профиль\n\nИмя: {student_name}\n\nШкола: {muc}\n\nКласс: {school}\n\nГород: {city}\n\nНомер: {teacher_num}\n\n"
         },
         "uz": {
             "ask_file": "Iltimos, fotosurat yoki PDF faylini yuboring.",
             "confirm_text": "tekshirish uchun chekingizni yuboring?",
             "bt_yes": "Ha",
             "bt_no": "Yok",
-            "student_profile": f"Sizning profilingiz \n\nUztozingizni Ismi: {teacher_name}\n\nIsm: {student_name}\n\nMaktab: {muc}\n\nSinif: {school}\n\nTuman: {city}\n\nTelefon raqam: {student_num}\n\nUztozingizni telefon nomeri: {teacher_num}\n\n",
-            "teacher_profile": f"Sizning profilingiz \n\nIsm: {teacher_name}\n\nMaktab: {muc}\n\nSinif: {school}\n\nTuman: {city}\n\nTelefon raqam: {teacher_num}\n\n"
         }
     }
+    if who == 'std':
+        profile_text = (f"{'Ваш профиль' if lg == 'ru' else 'Sizning profilingiz'}\n\n"
+                        f"{'Имя учителя' if lg == 'ru' else 'Ustozingiz ismi'}: {teacher_name}\n"
+                        f"{'Имя' if lg == 'ru' else 'Ism'}: {student_name}\n"
+                        f"{'Школа' if lg == 'ru' else 'Maktab'}: {muc}\n"
+                        f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
+                        f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
+                        f"{'Номер учителя' if lg == 'ru' else 'Ustozingiz telefon raqami'}: {teacher_num}\n"
+                        f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {student_num}\n"
+                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+    elif who in ['Tch_a','Pr_a']:
+        profile_text = (f"{'Профиль вашего ученика' if lg == 'ru' else 'Okuvchini profili'}\n\n"
+                        f"{'Имя' if lg == 'ru' else 'Ism'}: {student_name}\n"
+                        f"{'Школа' if lg == 'ru' else 'Maktab'}: {muc}\n"
+                        f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
+                        f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
+                        f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
+                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+    else:
+        profile_text = (f"{'Ваш профиль' if lg == 'ru' else 'Sizning profilingiz'}\n\n"
+                        f"{'Имя' if lg == 'ru' else 'Ism'}: {teacher_name}\n"
+                        f"{'Школа' if lg == 'ru' else 'Maktab'}: {muc}\n"
+                        f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
+                        f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
+                        f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
+                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
 
     current_texts = texts[lg]
     bt = current_texts["bt_yes"]
     bt2 = current_texts["bt_no"]
     ask_file_text = current_texts["ask_file"]
-
-    if who == 'std':
-        profile_text = current_texts["student_profile"]
-    else:
-        profile_text = current_texts["teacher_profile"]
 
     final_text = f"{profile_text}{current_texts['confirm_text']}"
 
@@ -448,11 +513,14 @@ async def yes(call:CallbackQuery,state:FSMContext):
     }
     index = int(''.join(filter(str.isdigit, school)))
     code = f"{comm[index]}-100"
-    unique_code = generate_unique_code(code)
+    if who in ['Tch_a','Pr_a','std']:
+        unique_code = generate_unique_code(code)
+    else:
+        unique_code = ''
 
     common_data = {
         "telegram_id": user_id,
-        'code':unique_code,
+        'code':unique_code if unique_code else '',
         "who": who,
         "school": school,
         "city": city,
@@ -542,6 +610,14 @@ async def py(call:CallbackQuery,state:FSMContext):
                         f"{'Номер учителя' if lg == 'ru' else 'Ustozingiz telefon raqami'}: {teacher_num}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {student_num}\n"
                         f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+    elif who in ['Tch_a','Pr_a']:
+        profile_text = (f"{'Профиль вашего ученика' if lg == 'ru' else 'Okuvchini profili'}\n\n"
+                        f"{'Имя' if lg == 'ru' else 'Ism'}: {student_name}\n"
+                        f"{'Школа' if lg == 'ru' else 'Maktab'}: {muc}\n"
+                        f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
+                        f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
+                        f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
+                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
     else:
         profile_text = (f"{'Ваш профиль' if lg == 'ru' else 'Sizning profilingiz'}\n\n"
                         f"{'Имя' if lg == 'ru' else 'Ism'}: {teacher_name}\n"
@@ -580,31 +656,34 @@ async def tes(call:CallbackQuery,state:FSMContext):
     }
     index = int(''.join(filter(str.isdigit, school)))
     code = f"{comm[index]}-100"
-    unique_code = generate_unique_code(code)
 
     common_data = {
         "telegram_id": user_id,
-        'code':unique_code,
         "school": school,
         "class_name": muc,
         "city": city,
         "payment": False,  # Платеж не выполнен
         "language": ru
     }
+    unique_code = ''
 
     if who == 'std':
+        unique_code = generate_unique_code(code)
         common_data.update({
             "student_name": student_name,
+            'code':unique_code,
             "teacher_name1": teacher_name,
             "teacher_number": teacher_num,
             "student_number": student_num
         })
         db.insert(USERMOD, **common_data)
     elif who == 'Tch_a':
+        unique_code = generate_unique_code(code)
         teacher = db.read(TEACHER_MOD, where_clause=f'telegram_id = {user_id}')
         if teacher:
             common_data.update({
                 "teacher_name_id": teacher[0][0],
+                'code':unique_code,
                 "teacher_name1": teacher[0][2],
                 "teacher_number": teacher[0][6],
                 "student_name": student_name,
@@ -612,10 +691,12 @@ async def tes(call:CallbackQuery,state:FSMContext):
             })
             db.insert(USERMOD, **common_data)
     elif who == 'Pr_a':
+        unique_code = generate_unique_code(code)
         parent = db.read(PARENTS_MOD, where_clause=f'telegram_id = {user_id}')
         if parent:
             common_data.update({
                 "parents_id": parent[0][0],
+                'code':unique_code,
                 "teacher_name1": parent[0][2],
                 "teacher_number": parent[0][6],
                 "student_name": student_name,
@@ -635,23 +716,23 @@ async def tes(call:CallbackQuery,state:FSMContext):
         })
         db.insert(PARENTS_MOD, **common_data)
     
+    teacher = db.read(TEACHER_MOD, where_clause=f'telegram_id = {user_id}')
+    parent = db.read(PARENTS_MOD, where_clause=f'telegram_id = {user_id}')
+    student = db.read(USERMOD,where_clause=f'telegram_id = {user_id}')
+    new = f'\ncode: {unique_code}'
     if teacher is not None:
-        teacher = db.read(TEACHER_MOD, where_clause=f'telegram_id = {user_id}')
         text,lg = get_text_and_language(teacher,8)
         await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
-        await call.message.answer(f'{text}',reply_markup=CreateInline(add_std='add students'))
+        await call.message.answer(f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add students',code='Code'))
 
     elif parent is not None:
-        parent = db.read(PARENTS_MOD, where_clause=f'telegram_id = {user_id}')
         text,lg = get_text_and_language(parent,8)
         await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
-        await call.message.answer(f'{text}',reply_markup=CreateInline(add_std='add student'))
+        await call.message.answer(f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add student',code='Code'))
 
     elif student is not None:
-        student = db.read(USERMOD,where_clause=f'telegram_id = {user_id}')
         text,lg = get_text_and_language(student,7)
-        await call.message.answer(f'{text}')
-    await call.message.answer(f'{text}\n\nyour uniqal code: {unique_code}')
+        await call.message.answer(f'{text}\n{new if unique_code else ''}')
 
 @user_private_router.callback_query(F.data=='neet',StateUser.yep)
 async def net(call:CallbackQuery,state:FSMContext):

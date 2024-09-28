@@ -5,9 +5,12 @@ from aiogram.types import Message,ContentType
 from openpyxl.styles import Font, Border, Side, Alignment, PatternFill
 
 from ..utils.db.class_db import SQLiteCRUD
-from set_app.settings import USERMOD,PARENTS_MOD,TEACHER_MOD,DESCR
+from set_app.settings import USERMOD,DESCR
 
 db = SQLiteCRUD('./db.sqlite3')
+
+def is_uzbek_number(phone_number):
+        return phone_number.startswith('+998') or phone_number.startswith('998')
 
 def get_text_and_language(user_record, lg_index):
         main = db.read(DESCR,where_clause=f'title_id = 1')
@@ -29,10 +32,7 @@ def generate_unique_code(cod):
         # Один запрос для проверки наличия кода сразу во всех моделях
         def is_code_exists(code):
             parent_exists = db.read(USERMOD,where_clause=f'code = "{code}"')
-            user_exists = db.read(TEACHER_MOD,where_clause=f'code = "{code}"')
-            teacher_exists = db.read(PARENTS_MOD,where_clause=f'code = "{code}"')
-            
-            return bool(parent_exists or user_exists or teacher_exists)
+            return bool(parent_exists)
 
         # Проверяем сразу первый код
         if not is_code_exists(base_code):

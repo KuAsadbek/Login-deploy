@@ -2,7 +2,6 @@ from django.db import models
 
 class ParentMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID')
-    code = models.CharField(max_length=50,verbose_name='Code')
     parent_name = models.CharField(max_length=100,verbose_name='ФИО')
     school = models.CharField(max_length=100,verbose_name='Maktab')
     class_name = models.CharField(max_length=100,verbose_name='klass')
@@ -21,7 +20,6 @@ class ParentMod(models.Model):
 
 class TeacherMod(models.Model):
     telegram_id = models.BigIntegerField(verbose_name='Telegram ID')
-    code = models.CharField(max_length=50,verbose_name='Code')
     teacher_name = models.CharField(max_length=100,verbose_name='ФИО')
     school = models.CharField(max_length=100,verbose_name='Maktab')
     class_name = models.CharField(max_length=100,verbose_name='klass')

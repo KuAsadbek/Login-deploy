@@ -63,7 +63,6 @@ async def check(call:CallbackQuery):
 
     common_data = {
         "telegram_id": user_id,
-        'code':code,
         "school":school,
         "city": city,
         "class_name":class_name,
@@ -73,9 +72,11 @@ async def check(call:CallbackQuery):
 
     if lg == 'ru':
         success_message = 'Чек прошел проверку!!!'
+        start = 'желаете перейти в главную меню? -> /start'
         fail_message = 'Чек не прошел проверку!!!\n Пройдите регистрацию заново -> /start'
         lang_index = 2
     else:
+        start = 'Bosh sanifaga otmochisiz? -> /start'
         success_message = 'Chek tasdiqlandi!!!'
         fail_message = 'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
         lang_index = 1
@@ -87,6 +88,7 @@ async def check(call:CallbackQuery):
             teacher_id, tch_name, tch_num = teacher[0][0], teacher[0][2], teacher[0][6]
             common_data.update({
                 "teacher_name_id": teacher_id,
+                'code':code,
                 "teacher_name1": tch_name,
                 "teacher_number": tch_num,
                 "student_name": student_name,
@@ -96,6 +98,7 @@ async def check(call:CallbackQuery):
             parent_id, pr_name, pr_num = parent[0][0], parent[0][2], parent[0][6]
             common_data.update({
                 "parents_id": parent_id,
+                'code':code,
                 "teacher_name1": pr_name,
                 "teacher_number": pr_num,
                 "student_name": student_name,
@@ -105,6 +108,7 @@ async def check(call:CallbackQuery):
             common_data.update({
                 "teacher_number": teacher_number,
                 "student_name": student_name,
+                'code':code,
                 "teacher_name1": teacher_name,
                 "student_number": student_number
             })
@@ -120,7 +124,7 @@ async def check(call:CallbackQuery):
 
         db.insert(USERMOD if who in ['std', 'Tch_a', 'Pr_a'] else (TEACHER_MOD if who == 'tch' else PARENTS_MOD), **common_data)
 
-        await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\nжелаете перейти в главную меню -> /start\n\nyour code:{code}')
+        await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{start}\n{f'code: {code}' if code else ''}')
     else:
         await call.message.bot.send_message(chat_id=user_id,text=f'{fail_message}')
     db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')
