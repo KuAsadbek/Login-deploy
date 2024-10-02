@@ -2,12 +2,14 @@ import os
 from aiogram import Router,F
 from aiogram.filters import CommandStart
 from aiogram.types import Message,CallbackQuery,FSInputFile
+from aiogram.fsm.context import FSMContext
 
 from set_app.settings import DESCR,USERMOD,SAVE_DATA,TEACHER_MOD,PARENTS_MOD
 
 from ...utils.db.class_db import SQLiteCRUD
-from ...filters.chat_type import chat_type_filter,create_excel_with_data
+from ...filters.chat_type import chat_type_filter,create_excel_with_data,get_text_and_language
 from ...keyboards.inline.button import CreateInline
+from ...states.state_user.state_us import StateUser
 
 group_router = Router()
 group_router.message.filter(chat_type_filter(['supergroup']))
@@ -41,7 +43,7 @@ async def send(call:CallbackQuery):
         await call.message.reply("Нет данных.")
 
 @group_router.callback_query(lambda c: c.data and c.data.startswith('Tr_') or c.data.startswith('Fr_'))
-async def check(call:CallbackQuery):
+async def check(call:CallbackQuery,state:FSMContext):
     str_text, index,two_id = call.data.split('_')
     user_id = int(index)
     save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')
@@ -122,10 +124,16 @@ async def check(call:CallbackQuery):
 
         db.insert(USERMOD if who in ['std', 'Tch_a', 'Pr_a'] else (TEACHER_MOD if who == 'tch' else PARENTS_MOD), **common_data)
         if who == 'std':
-            await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
-        else:
-            await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
+            await state.update_data({'LG':lg,'std_id':user_id,'who':'std'})
+            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
+        elif who == 'Tch_a':
+            await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
+            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
+        elif who == 'Pr_a':
+            await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
+            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
     else:
-        await call.message.bot.send_message(chat_id=user_id,text=f'{fail_message}')
+        text = get_text_and_language('start',1)
+        await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text} \n\n{fail_message}')
     db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')
     await call.message.edit_reply_markup(reply_markup=None)

@@ -28,29 +28,40 @@ async def private_start(message:Message,state:FSMContext):
     if teacher is not None:
         text,lg = get_text_and_language(teacher,8)
         await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
-        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add students',code='Code',adm='Admin'))
+        await message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(add_std='add students',code='Code',adm='Admin'))
 
     elif parent is not None:
         text,lg = get_text_and_language(parent,8)
         await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
-        await message.answer(f'{text}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
+        await message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
 
     elif student is not None:
         text,lg = get_text_and_language(student,11)
-        await message.answer(f'{text}',reply_markup=CreateInline(code='Code',adm='Admin'))
+        await state.update_data({'LG':lg,'std_id':user_id,'who':'std'})
+        await message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(code='Code',adm='Admin'))
 
     elif save_data is not None:
         await message.answer('Ваша заявка уже отправлена')
 
     else:
         text = get_text_and_language('start',1)
-        await message.answer(f'{text}',reply_markup=CreateInline(ru='Ru',uz='Uz'))
+        await message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(ru='Ru',uz='Uz'))
         await state.set_state(StateUser.ru)
         await message.delete()
 
 @user_private_router.callback_query(F.data == 'adm')
-async def adm(call:CallbackQuery):
-    await call.message.answer('Admin пока не выбрано!')
+async def adm(call:CallbackQuery,state:FSMContext):
+    data = await state.get_data()
+    lg = data.get('LG')
+    text = {
+        'uz':{
+            'text':'Admin Telefon raqami -> 941131317'
+        },
+        'ru':{
+            'text':'Admin номер телефон -> 941131317'
+        }
+    }
+    await call.message.answer(f'Username: <a href="https://t.me/Hogwart_admin">Admin</a>\n{text[lg]['text']}')
 
 @user_private_router.callback_query(F.data == 'code')
 async def cod(call: CallbackQuery, state: FSMContext):
@@ -354,7 +365,6 @@ async def num(message:Message,state:FSMContext):
         if is_uzbek_number(num):
             await message.answer(text=text,reply_markup=ReplyKeyboardRemove())
             await state.set_state(StateUser.teacher_num)
-            await message.delete()
         else:
             await message.answer('error')
     else:
@@ -371,7 +381,6 @@ async def num(message:Message,state:FSMContext):
         if is_uzbek_number(num):
             await message.answer(py,reply_markup=CreateInline(bt,bt2))
             await state.set_state(StateUser.py)
-            await message.delete()
         else:
             await message.answer(error_text)
     await message.delete()
@@ -414,7 +423,6 @@ async def nur(message:Message,state:FSMContext):
     else:
         # Если номер не из Узбекистана
         await message.answer(error_text)
-    await message.delete()
     
 @user_private_router.callback_query((F.data == 'Оплатить Онляйн') | (F.data == 'Onlayn to\'lov'), StateUser.py)
 async def rech(call:CallbackQuery,state:FSMContext):
@@ -518,9 +526,13 @@ async def handle_media(message: Message, state: FSMContext):
             doc = message.document.file_id
             await state.update_data({'doc': doc, 'url': url, 'n': 2})
             await message.reply(text=final_text, reply_markup=CreateInline(bt, bt2))
+
+    elif message.document.mime_type == 'image/png':
+            png_id = message.document.file_id
+            await state.update_data({'photo_id': png_id, 'url': url, 'n': 1})  # Обработка как фотографии
+            await message.reply(text=final_text, reply_markup=CreateInline(bt, bt2))
     else:
         await message.answer(text=ask_file_text)
-    await message.delete()
 
 @user_private_router.callback_query((F.data=='Да') | (F.data == 'Ha'))
 async def yes(call:CallbackQuery,state:FSMContext):
@@ -769,16 +781,18 @@ async def tes(call:CallbackQuery,state:FSMContext):
     if teacher is not None:
         text,lg = get_text_and_language_end(teacher,8)
         await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
-        await call.message.answer(f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add students',code='Code',adm='Admin'))
+        await call.message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add students',code='Code',adm='Admin'))
 
     elif parent is not None:
         text,lg = get_text_and_language_end(parent,8)
         await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
-        await call.message.answer(f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
+        await call.message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
 
     elif student is not None:
         text,lg = get_text_and_language_end(student,7)
-        await call.message.answer(f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
+        await state.update_data({'LG':lg,'std_id':user_id,'who':'std'})
+        await call.message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}\n{new if unique_code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
+    await call.message.delete()
 
 @user_private_router.callback_query(F.data=='neet',StateUser.yep)
 async def net(call:CallbackQuery,state:FSMContext):
