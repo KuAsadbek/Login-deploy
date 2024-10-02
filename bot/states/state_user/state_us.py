@@ -14,6 +14,7 @@ class StateUser(StatesGroup):
     city = State()
     number = State()
     py = State()
+    look = State()
     py1 = State()
     check = State()
     comment = State()

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-^+minav+sx4s5eb9+%n^bt8$(^2so$rybf$=-rbqz$hl0-bcs7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['kuasadf8.beget.tech']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -128,7 +128,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # bots
-BOT_TOKEN = '6717297238:AAE1lAwIuPzG41k-bAcZGJSzBK3SujH9COo'
+BOT_TOKEN = '6717297238:AAGw5m-HinTPyhpOcOxPu0CTUhBJIiZYmO4'
 ADMIN_ID = [7675608621]
 CHANEL_ID = -1002020757864
 

@@ -72,11 +72,9 @@ async def check(call:CallbackQuery):
 
     if lg == 'ru':
         success_message = 'Чек прошел проверку!!!'
-        start = 'желаете перейти в главную меню? -> /start'
         fail_message = 'Чек не прошел проверку!!!\n Пройдите регистрацию заново -> /start'
         lang_index = 2
     else:
-        start = 'Bosh sanifaga otmochisiz? -> /start'
         success_message = 'Chek tasdiqlandi!!!'
         fail_message = 'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
         lang_index = 1
@@ -123,8 +121,10 @@ async def check(call:CallbackQuery):
             })
 
         db.insert(USERMOD if who in ['std', 'Tch_a', 'Pr_a'] else (TEACHER_MOD if who == 'tch' else PARENTS_MOD), **common_data)
-
-        await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{start}\n{f'code: {code}' if code else ''}')
+        if who == 'std':
+            await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
+        else:
+            await call.message.bot.send_message(chat_id=user_id,text=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
     else:
         await call.message.bot.send_message(chat_id=user_id,text=f'{fail_message}')
     db.delete(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')

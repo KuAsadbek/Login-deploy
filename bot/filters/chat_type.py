@@ -21,6 +21,12 @@ def get_text_and_language(user_record, lg_index):
             n = 2 if lg == 'ru' else 1
             return main[0][n], lg
 
+def get_text_and_language_end(user_record, lg_index):
+        main = db.read(DESCR,where_clause=f'title_id = 14')
+        lg = user_record[0][lg_index]
+        n = 2 if lg == 'ru' else 1
+        return main[0][n], lg
+
 def generate_unique_code(cod):
         base_code = cod
         counter = 0
@@ -46,12 +52,16 @@ def generate_unique_code(cod):
             if not is_code_exists(new_code):
                 return new_code
 
+# Функция для стилизации ячеек с заголовкамиimport openpyxl
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+
 # Функция для стилизации ячеек с заголовками
 def style_header_cells(sheet, columns):
     header_font = Font(bold=True, size=12, color="FFFFFF")  # Белый жирный шрифт
-    fill = PatternFill(fill_type="solid", start_color="4F81BD", end_color="4F81BD")  # Синий фон
-    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))  # Тонкие границы
-    
+    fill = PatternFill(fill_type="solid", start_color="4F81BD")  # Синий фон
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                    top=Side(style='thin'), bottom=Side(style='thin'))  # Тонкие границы
+
     for col in columns:
         for cell in sheet[col][:1]:  # Только первая строка (заголовки)
             cell.font = header_font
@@ -61,51 +71,68 @@ def style_header_cells(sheet, columns):
 
 # Функция для добавления границ и выравнивания
 def style_body_cells(sheet, columns):
-    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                    top=Side(style='thin'), bottom=Side(style='thin'))
+
     for col in columns:
         sheet.column_dimensions[col].width = 20  # Задаем ширину столбцов
         for cell in sheet[col][1:]:  # Все строки, кроме первой (заголовков)
             cell.border = border
             cell.alignment = Alignment(horizontal="left", vertical="center")  # Выравнивание по левому краю
 
-# Функция для раскрашивания ячеек в колонке 'G' в зависимости от значения
-def style_column_g(sheet):
-    green_fill = PatternFill(fill_type="solid", start_color="00FF00", end_color="00FF00")  # Зеленый цвет
-    red_fill = PatternFill(fill_type="solid", start_color="FF0000", end_color="FF0000")  # Красный цвет
-    
-    for cell in sheet['G'][1:]:  # Пропускаем заголовок (начинаем с 1 строки)
+# Функция для раскрашивания ячеек в зависимости от значения
+def style_column(sheet, column_letter):
+    green_fill = PatternFill(fill_type="solid", start_color="00FF00")  # Зеленый цвет
+    red_fill = PatternFill(fill_type="solid", start_color="FF0000")  # Красный цвет
+
+    for cell in sheet[column_letter][1:]:  # Пропускаем заголовок (начинаем с 1 строки)
         if cell.value == 1:
             cell.fill = green_fill
         elif cell.value == 0:
             cell.fill = red_fill
-
 # Функция для создания листа и стилизации
 def create_sheet(workbook, sheet_title, data, headers):
     sheet = workbook.create_sheet(sheet_title)
     sheet.append(headers)
+    
     for row in data:
         sheet.append(row)
-    columns_to_style = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        # Заменяем None на пустые строки
+        # formatted_row = [cell if cell else "" for cell in row]
+        # sheet.append(formatted_row)
+    
+    # Определяем, какие колонки стилизовать
+    columns_to_style = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"] if sheet_title == "Students" else ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
+    
     style_header_cells(sheet, columns_to_style)
     style_body_cells(sheet, columns_to_style)
-    style_column_g(sheet)
+
+    # Для студентов окрашиваем колонку 'G', для других листов - 'H'
+    column_letter = 'K' if sheet_title == "Students" else 'H'
+    style_column(sheet, column_letter)
+
 
 # Основная функция для создания Excel файла с улучшенной стилизацией
 def create_excel_with_data(Students, Teacher, Parents, file_name="output.xlsx"):
     try:
         workbook = openpyxl.Workbook()
-        workbook.remove(workbook.active)
-        headers = ["id", "Telegram ID", "Name", "School", "City", "Number", "Payment", "Language"]
-        
+        workbook.remove(workbook.active)  # Удаляем активный лист, если он не нужен
+
+        headers = ["id", "Telegram ID", "Name", "School", 'Class name', "City", "Number", "Payment", "Language"]
+        usr_headers = [
+            "id", 'Code', "Telegram ID", "Student name", 
+            'Teacher name 1', "School", 'Class name', "City", 'Student number', 
+            "Teacher number", "Payment", "Language",'Parents', 'Teacher name'
+        ]
+
         # Создаем листы, если данные есть
         if Students:
-            create_sheet(workbook, "Students", Students, headers)
+            create_sheet(workbook, "Students", Students, usr_headers)
         if Teacher:
             create_sheet(workbook, "Teachers", Teacher, headers)
         if Parents:
             create_sheet(workbook, "Parents", Parents, headers)
-        
+
         # Сохраняем файл только один раз в конце
         workbook.save(file_name)
         print(f"Файл '{file_name}' успешно создан.")
