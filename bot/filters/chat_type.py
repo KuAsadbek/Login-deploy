@@ -151,5 +151,4 @@ class chat_type_filter(Filter):
 
 class MediaFilter(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        file = message.content_type in [ContentType.PHOTO, ContentType.DOCUMENT]
-        return file if file else 'False'
+        return message.content_type in [ContentType.PHOTO, ContentType.DOCUMENT]
