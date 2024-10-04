@@ -16,5 +16,6 @@ class StateUser(StatesGroup):
     py = State()
     look = State()
     py1 = State()
+    yep1 = State()
     check = State()
     comment = State()

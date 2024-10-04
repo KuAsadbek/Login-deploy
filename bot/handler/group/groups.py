@@ -16,6 +16,27 @@ group_router.message.filter(chat_type_filter(['supergroup']))
 
 db = SQLiteCRUD('./db.sqlite3')
 
+async def send_photo_and_update_state(call, user_id, lg, who, code, main, success_message, reply_markup):
+    """Функция для отправки фото и обновления состояния"""
+    n = 1
+    if who in ['tch','pr']:
+        n = 0
+    if n:
+        await call.message.bot.send_photo(
+            chat_id=user_id,
+            photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',
+            caption=f'{main}\n\n{success_message}\n{f"code: {code}" if code else ""}',
+            reply_markup=reply_markup
+        )
+    else:
+        await call.message.bot.send_photo(
+            chat_id=user_id,
+            photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',
+            caption=f'{main}\n\n{success_message}',
+            reply_markup=reply_markup
+        )
+    await call.message.delete()
+
 @group_router.message(CommandStart())
 async def one_cmd(message:Message):
     await message.answer(f'Hi bro you need excel file?',reply_markup=CreateInline('send_excel'))
@@ -47,6 +68,12 @@ async def check(call:CallbackQuery,state:FSMContext):
     str_text, index,two_id = call.data.split('_')
     user_id = int(index)
     save_data = db.read(SAVE_DATA,where_clause=f'telegram_id = {user_id} AND student_name = "{two_id}"')
+
+    if not save_data:
+        # Если нет данных, выход из функции
+        await call.message.answer("Данные не найдены.")
+        return
+    
     teacher = db.read(TEACHER_MOD,where_clause=f'telegram_id = {user_id}')
     parent = db.read(PARENTS_MOD,where_clause=f'telegram_id = {user_id}')
 
@@ -123,15 +150,10 @@ async def check(call:CallbackQuery,state:FSMContext):
             })
 
         db.insert(USERMOD if who in ['std', 'Tch_a', 'Pr_a'] else (TEACHER_MOD if who == 'tch' else PARENTS_MOD), **common_data)
-        if who == 'std':
-            await state.update_data({'LG':lg,'std_id':user_id,'who':'std'})
-            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(code='Code',adm='Admin'))
-        elif who == 'Tch_a':
-            await state.update_data({'LG':lg,'tch_id':user_id,'who':'Tch_a'})
-            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
-        elif who == 'Pr_a':
-            await state.update_data({'LG':lg,'pr_id':user_id,'who':'Pr_a'})
-            await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{main}\n\n{success_message}\n{f'code: {code}' if code else ''}',reply_markup=CreateInline(add_std='add student',code='Code',adm='Admin'))
+
+        await state.update_data({'LG':lg,f'{who}_id':user_id,'who':who})
+        await send_photo_and_update_state(call, user_id, lg, who, code, main, success_message, CreateInline(add_std='add student', code='Code', adm='Admin'))
+
     else:
         text = get_text_and_language('start',1)
         await call.message.bot.send_photo(chat_id=user_id,photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text} \n\n{fail_message}')

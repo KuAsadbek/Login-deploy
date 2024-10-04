@@ -60,6 +60,6 @@ SAVE_DATA = 'main_app_save_user_data'
 
 db = SQLiteCRUD('./db.sqlite3')
 
-# n = db.read(PARENTS_MOD,where_clause=f'telegram_id = 76756086242')
-# des = n[0][8]
-# print(des)
+
+# main = db.read(DESCR,where_clause=f'title_id = 14')[0][1]
+# print(main)
