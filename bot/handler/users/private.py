@@ -430,17 +430,19 @@ async def rech(call:CallbackQuery,state:FSMContext):
     lg = data.get('LG')
     text = {
         'uz':{
+            'pay':'Musobaqada qatnashish narxi: 70 000 so\'m',
             'usr':'Atojonov Otajon',
             'card':'Karta nomer: 8600-4904-1188-3994',
             'check':'Check yuborish'
         },
         'ru':{
+            'pay':'Стоимость участия в конкурсе: 70 000 сомов',
             'usr':'Atojonov Otajon',
             'card':'Номер карты: 8600-4904-1188-3994',
             'check':'Отправить чек'
         }
     }
-    await call.message.answer(text=f"user: {text[lg]['usr']}\n{text[lg]['card']}",reply_markup=CreateInline(text[lg]['check']))
+    await call.message.answer(text=f"{text[lg]['pay']}\n\nuser: {text[lg]['usr']}\n{text[lg]['card']}",reply_markup=CreateInline(text[lg]['check']))
     await state.set_state(StateUser.look)
     await call.message.delete()
 
@@ -471,13 +473,11 @@ async def handle_media(message: Message, state: FSMContext):
     texts = {
         "ru": {
             "ask_file": "Пожалуйста, отправьте Фото или PDF файл.",
-            "confirm_text": "ваш чек отправить на проверку?",
             "bt_yes": "Да",
             "bt_no": "Нет",
         },
         "uz": {
             "ask_file": "Iltimos, fotosurat yoki PDF faylini yuboring.",
-            "confirm_text": "tekshirish uchun chekingizni yuboring?",
             "bt_yes": "Ha",
             "bt_no": "Yok",
         }
@@ -514,7 +514,7 @@ async def handle_media(message: Message, state: FSMContext):
     bt2 = current_texts["bt_no"]
     ask_file_text = current_texts["ask_file"]
 
-    final_text = f"{profile_text}{current_texts['confirm_text']}"
+    final_text = f"{profile_text}{current_texts}"
 
     if message.content_type == ContentType.PHOTO:
         photo_id = message.photo[-1].file_id
@@ -626,15 +626,10 @@ async def yes(call:CallbackQuery,state:FSMContext):
 
 @user_private_router.callback_query((F.data=='Нет') | (F.data == 'Yoq'))
 async def net(call:CallbackQuery,state:FSMContext):
-    data = await state.get_data()
-    lg = data.get("LG")
-    if lg == 'ru':
-        test = f'Желаете пройти регистрацию заново?\n Нажмите суда -> /start'
-    else:
-        test = f'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
-    await call.message.answer(test)
+    text = get_text_and_language('start',1)
+    await call.message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(ru='Ru',uz='Uz'))
+    await state.set_state(StateUser.ru)
     await call.message.delete()
-    
 
 @user_private_router.callback_query((F.data=='Прийти и заплатить') | (F.data == 'Borib tolash'),StateUser.py)
 async def py(call:CallbackQuery,state:FSMContext):
@@ -796,12 +791,7 @@ async def tes(call:CallbackQuery,state:FSMContext):
 
 @user_private_router.callback_query(F.data=='neet',StateUser.yep)
 async def net(call:CallbackQuery,state:FSMContext):
-    data = await state.get_data()
-    lg = data.get("LG")
-    if lg == 'ru':
-        test = f'Желаете пройти регистрацию заново?\n Нажмите суда -> /start'
-    elif lg == 'uz':
-        test = f'Tekshiruv tasdiqlanmadi!!!\nQayta ro\'yxatdan o\'ting -> /start'
-    await call.message.answer(test)
+    text = get_text_and_language('start',1)
+    await call.message.answer_photo(photo='https://d.newsweek.com/en/full/837076/mcdhapo-ec961.jpg',caption=f'{text}',reply_markup=CreateInline(ru='Ru',uz='Uz'))
+    await state.set_state(StateUser.ru)
     await call.message.delete()
-    await state.clear()
