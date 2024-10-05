@@ -532,7 +532,7 @@ async def handle_media(message: Message, state: FSMContext):
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер учителя' if lg == 'ru' else 'Ustozingiz telefon raqami'}: {teacher_num}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {student_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
     elif who in ['Tch_a','Pr_a']:
         profile_text = (f"{'Профиль вашего ученика' if lg == 'ru' else 'Okuvchini profili'}\n\n"
                         f"{'Имя' if lg == 'ru' else 'Ism'}: {student_name}\n"
@@ -540,7 +540,7 @@ async def handle_media(message: Message, state: FSMContext):
                         f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
     else:
         profile_text = (f"{'Ваш профиль' if lg == 'ru' else 'Sizning profilingiz'}\n\n"
                         f"{'Имя' if lg == 'ru' else 'Ism'}: {teacher_name}\n"
@@ -548,7 +548,7 @@ async def handle_media(message: Message, state: FSMContext):
                         f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
 
     current_texts = texts[lg]
     bt = current_texts["bt_yes"]
@@ -706,7 +706,7 @@ async def py(call:CallbackQuery,state:FSMContext):
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер учителя' if lg == 'ru' else 'Ustozingiz telefon raqami'}: {teacher_num}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {student_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
     elif who in ['Tch_a','Pr_a']:
         profile_text = (f"{'Профиль вашего ученика' if lg == 'ru' else 'Okuvchini profili'}\n\n"
                         f"{'Имя' if lg == 'ru' else 'Ism'}: {student_name}\n"
@@ -714,7 +714,7 @@ async def py(call:CallbackQuery,state:FSMContext):
                         f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
     else:
         profile_text = (f"{'Ваш профиль' if lg == 'ru' else 'Sizning profilingiz'}\n\n"
                         f"{'Имя' if lg == 'ru' else 'Ism'}: {teacher_name}\n"
@@ -722,7 +722,7 @@ async def py(call:CallbackQuery,state:FSMContext):
                         f"{'Класс' if lg == 'ru' else 'Sinif'}: {school}\n"
                         f"{'Город' if lg == 'ru' else 'Tuman'}: {city}\n"
                         f"{'Номер' if lg == 'ru' else 'Telefon raqam'}: {teacher_num}\n"
-                        f"{'ваш чек отправить на проверку?' if lg == 'ru' else 'Tekshirish uchun chekingizni yuboring?'}")
+                        f"{'Правильно ли вы ввели свои данные?' if lg == 'ru' else 'Ma\'lumotlaringgiz to\'g\'ri kiritilganmi ?'}")
 
     await call.message.answer(text=profile_text,reply_markup=CreateInline(yees=bt,neet=bt2))
     await state.set_state(StateUser.yep)
